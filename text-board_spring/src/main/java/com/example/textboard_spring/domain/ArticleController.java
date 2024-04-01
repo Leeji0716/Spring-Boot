@@ -78,13 +78,22 @@ public class ArticleController {
         return "list";
     }
 
+    //입력 후 실제 데이터 저장 부분
     @RequestMapping("/add")
-    @ResponseBody
     public String add(@RequestParam("title") String title,
-                      @RequestParam("body") String body) {
-
+                      @RequestParam("body") String body,
+                      Model model) {
+//list 자체가 articleList를 받아서 실행되기 때문에 add에서도 받아야함
         articleRepository.saveArticle(title, body);
+        ArrayList<Article> articleList = articleRepository.findAll();
 
-        return "게시물이 등록되었습니다.";
+        model.addAttribute("articleList", articleList);
+        return "list";
+    }
+
+    //입력화면 보여주기
+    @RequestMapping("/form")
+    public String from(){
+        return "form";
     }
 }
