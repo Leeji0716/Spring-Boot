@@ -1,74 +1,67 @@
 package com.example.textboard_spring.domain;
 
-import com.example.textboard_spring.base.CommonUtil;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
-import java.util.Scanner;
 
 @Controller
 public class ArticleController {
-    CommonUtil commonUtil = new CommonUtil();
-    ArticleRepository articleRepository = new ArticleRepository();
+    Repository articleRepository = new ArticleMySQLRepository();
+
 
     @RequestMapping("/search")
-    @ResponseBody
-    public ArrayList<Article> search(@RequestParam (value="keyword", defaultValue = "") String keyword) {
+    public String search(@RequestParam(value = "keyword", defaultValue = "") String keyword,
+                         Model model){
         ArrayList<Article> searchedList = articleRepository.findArticleByKeyword(keyword);
-        return searchedList;
+        model.addAttribute("aritlcleList", searchedList);
+        return "list";
     }
 
-    @RequestMapping("/detail")
-    @ResponseBody
-    public Article detail(@RequestParam ("id") int id) {
+    @RequestMapping("/detail/{id}")
+    public String detail(@PathVariable("id") int id, Model model) {
+
         Article article = articleRepository.findArticleById(id);
+
         if (article == null) {
-            return null;
+            return "없는 게시물입니다.";
         }
         article.increaseHit();
-
-        // 객체를 -> json 문자열로 변환 -> jackson 라이브러리 사용
-//        String jsonString = "";
-//        try {
-//            // ObjectMapper 인스턴스 생성
-//            ObjectMapper objectMapper = new ObjectMapper();
-//            // 객체를 JSON 문자열로 변환
-//            jsonString = objectMapper.writeValueAsString(article);
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
-
-        return article;
+        model.addAttribute("article", article);
+        return "detail";
     }
 
-    @RequestMapping("/delete")
-    @ResponseBody
-    public String delete(@RequestParam ("id") int id) {
+    @RequestMapping("/delete/{id}")
+    public String delete(@PathVariable ("id") int id) {
         Article article = articleRepository.findArticleById(id);
         if (article == null) {
             return "없는 게시물입니다.";
         }
         articleRepository.deleteArticle(article);
-        return id + "번 게시물이 삭제되었습니다.";
+        return "redirect:/list";
     }
 
-    @RequestMapping("/update")
-    @ResponseBody
-    public String update(@RequestParam ("id") int id,
-                         @RequestParam("newTitle") String newTitle,
-                         @RequestParam("newBody") String newBody) {
+    @PostMapping("/update/{id}")
+    public String update(@PathVariable("id") int id,
+                         @RequestParam("title") String title,
+                         @RequestParam("body") String body){
         Article article = articleRepository.findArticleById(id);
         if (article == null) {
-            return "없는 게시물입니다.";
+            throw new RuntimeException("없는 게시물입니다.");
         }
-        articleRepository.updateArticle(article, newTitle, newBody);
-        return id + "번 게시물이 수정되었습니다";
+        articleRepository.updateArticle(article, title, body);
+        return "redirect:/detail/%d".formatted(id);
+    }
+
+    @GetMapping("/update/{id}")
+    public String update(@PathVariable("id") int id, Model model){
+        Article article = articleRepository.findArticleById(id);
+        if (article == null) {
+            throw new RuntimeException("없는 게시물입니다.");
+        }
+        model.addAttribute("article", article);
+        return "updateForm";
     }
 
     @RequestMapping("/list")
@@ -83,7 +76,7 @@ public class ArticleController {
     public String add(@RequestParam("title") String title,
                       @RequestParam("body") String body,
                       Model model) {
-//list 자체가 articleList를 받아서 실행되기 때문에 add에서도 받아야함
+        // list(html) 자체가 articleList를 받아서 실행되기 때문에 add에서도 받아야함
         articleRepository.saveArticle(title, body);
         ArrayList<Article> articleList = articleRepository.findAll();
 

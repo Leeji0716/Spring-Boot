@@ -7,8 +7,15 @@
 <body>
 <h1>목록</h1>
 <ul>
-    <li th:each="article : ${articleList}" th:text="${article.title}"></li>
+    <li th:each="article : ${articleList}">
+        <a th:href="@{|/detail/${article.id}|}" th:text="${article.title}"></a>
+    </li>
 </ul>
-<a href="/form">등록하기</a>
+<a href="/form">등록하기</a><br>
+
+<form action="/search" method="get">
+    <input type="text" name="keyword">
+    <input type="submit" value="검색">
+</form>
 </body>
 </html>
